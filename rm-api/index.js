@@ -14,10 +14,12 @@ app.use((req, res, next) => {
 });
 
 // Define the request object for systeminformation
-const siRequest = {
+const siStaticRequest = {
     cpu: 'cores, speedMin, speedMax',
     osInfo: 'platform, distro, release',
     versions: 'git, node, npm',
+};
+const siDynamicRequest = {
     mem: 'total, free, used, active, available',
     currentLoad: 'avgLoad, currentLoad',
     fullLoad: '*',
@@ -25,20 +27,26 @@ const siRequest = {
     fsSize: '(/dev/nvme0n1p2) *',
 };
 
-/**
- * API endpoint to get all requested system statistics.
- * Fetches data using systeminformation and returns it as JSON.
- */
-app.get('/api/sys-stats', async (req, res) => {
+// path for info that doesn't change over time
+app.get('/static', async (req, res) => {
     try {
         // Fetch all requested system information using si.get()
-        const data = await si.get(siRequest);
-
-        // Send the fetched data as a JSON response
+        const data = await si.get(siStaticRequest);
         res.json(data);
     } catch (error) {
         console.error('Error fetching system statistics:', error);
-        // Send a 500 Internal Server Error response if something goes wrong
+        res.status(500).json({ error: 'Failed to fetch system statistics', details: error.message });
+    }
+});
+
+// path for info that changes over time
+app.get('/dynamic', async (req, res) => {
+    try {
+        // Fetch all requested system information using si.get()
+        const data = await si.get(siDynamicRequest);
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching system statistics:', error);
         res.status(500).json({ error: 'Failed to fetch system statistics', details: error.message });
     }
 });
@@ -46,7 +54,8 @@ app.get('/api/sys-stats', async (req, res) => {
 // Start the server
 app.listen(port, () => {
     console.log(`System Stats API listening at http://localhost:${port}`);
-    console.log(`Access system statistics at http://localhost:${port}/api/sys-stats`);
+    console.log(`Access static system statistics at http://localhost:${port}/static`);
+    console.log(`Access dynamic system statistics at http://localhost:${port}/dynamic`);
 });
 
 
